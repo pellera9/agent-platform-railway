@@ -2,11 +2,11 @@
 
 An agent platform you build, run, and improve using coding agents.
 
-This is a starter agent-platform built using [Agno](https://github.com/agno-agi/agno), one-command deployable to Railway. Everything runs in your cloud, behind your auth, with all your data stored in your database.
+This is a starter agent-platform built using [Agno](https://github.com/agno-agi/agno), one-command deployable to Railway. Everything runs in your cloud, behind your auth, with your data stored in your database.
 
 ## Designed for coding agents
 
-This codebase is designed for coding agents. Use the `create` workflow to go from idea to agent, the `improve` workflow to harden the agent, the `extend` workflow to add new capabilities, lock them up using evals and then hill-climb against them. Keep the entire repo in sync using the `review-and-improve` workflow.
+This codebase is designed for coding agents.
 
 Because trace data, agent code, system logs, and the iteration tool all live in one place, coding agents like Claude Code can read, update, and improve the system end-to-end.
 
@@ -18,17 +18,15 @@ Five prompts cover the full agent development lifecycle:
 4. **Hill Climb.** Claude runs the eval suite, diagnoses failures, and fixes what's in scope. Stops when all cases pass.
 5. **Review.** Claude sweeps the repo for drift between docs, code, and config. Auto-fixes mechanical drift like stale paths and missing env vars; flags anything bigger.
 
-Three of the five run autonomously, with no input from you.
-
 ## Own the stack
 
-The auto-improvement loop is possible because three conditions are met:
+The auto-improvement loop is possible because we own the full stack. From start to end:
 
-1. **Every action is exposed.** Running an agent, reading a session, running an eval. Every key action can be run using cURL or bash.
-2. **Data is colocated.** Sessions and traces live in our Postgres database. A coding agent can trigger a run and read what came out without leaving its environment.
-3. **Logs over everything.** The entire platform runs locally on Docker. The coding agent reads live logs and makes updates as needed. The test → review loop is ~5s.
-
-Most software can't meet these conditions because its inputs and outputs are scattered across tools. Your agent platform can.
+1. **Runtime.** The server that runs your agents. FastAPI running Agno AgentOS (see `app/main.py`).
+2. **Storage.** Sessions, memory, knowledge, and traces all stored in PostgreSQL + pgvector.
+3. **Connectors.** Hundreds of toolkits and MCP servers available via Agno to connect agents to external tools.
+4. **Interfaces.** Expose agents in Slack, Discord, Telegram. Slack is already wired (see `app/main.py`). Discord, Telegram, and custom UIs can be added using [Agno interfaces](https://docs.agno.com/agent-os/interfaces/overview?utm_source=github&utm_medium=example-repo&utm_campaign=agent-platform&utm_content=agent-platform&utm_term=railway).
+5. **Infrastructure.** Docker locally, Railway in production.
 
 ## Get Started
 
