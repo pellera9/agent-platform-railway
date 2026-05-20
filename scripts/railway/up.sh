@@ -35,17 +35,47 @@ cat << 'BANNER'
 BANNER
 echo -e "${NC}"
 
-# Load env file — .env.production preferred for Railway, .env as fallback
-if [[ -f .env.production ]]; then
-    set -a
-    source .env.production
-    set +a
-    echo -e "${DIM}Loaded .env.production${NC}"
-elif [[ -f .env ]]; then
-    set -a
-    source .env
-    set +a
-    echo -e "${DIM}Loaded .env${NC}"
+# Load env file — .env.production preferred for Railway, .env as fallback.
+# Parsed line-by-line (not `source`d) so an unquoted multi-line PEM
+# JWT_VERIFICATION_KEY isn't interpreted as shell. Mirrors the parser in
+# env-sync.sh so both scripts read .env files identically.
+ENV_FILE=""
+[[ -f .env.production ]] && ENV_FILE=".env.production"
+[[ -z "$ENV_FILE" && -f .env ]] && ENV_FILE=".env"
+
+if [[ -n "$ENV_FILE" ]]; then
+    current_key=""
+    current_value=""
+    while IFS= read -r line || [[ -n "$line" ]]; do
+        if [[ -z "$current_key" ]]; then
+            [[ -z "$line" || "$line" =~ ^[[:space:]]*# ]] && continue
+        fi
+
+        if [[ -z "$current_key" ]]; then
+            current_key="${line%%=*}"
+            current_value="${line#*=}"
+        else
+            current_value="${current_value}
+${line}"
+        fi
+
+        # Still inside a PEM block — keep accumulating lines.
+        if [[ "$current_value" == *"-----BEGIN"* && "$current_value" != *"-----END"* ]]; then
+            continue
+        fi
+
+        # Strip surrounding quotes if present
+        current_value="${current_value#\"}"
+        current_value="${current_value%\"}"
+        current_value="${current_value#\'}"
+        current_value="${current_value%\'}"
+
+        export "${current_key}=${current_value}"
+
+        current_key=""
+        current_value=""
+    done < "$ENV_FILE"
+    echo -e "${DIM}Loaded ${ENV_FILE}${NC}"
 fi
 
 # Preflight

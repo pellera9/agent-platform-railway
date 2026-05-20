@@ -2,7 +2,7 @@
 
 An agent platform you build, run, and improve using coding agents.
 
-This is a starter agent-platform built using [Agno](https://github.com/agno-agi/agno), one-command deployable to Railway. Everything runs in your cloud, behind your auth, with your data stored in your database.
+This is a starter agent-platform built with **AgentOS on FastAPI and Postgres**. Everything runs in your cloud, behind your auth, with your data stored in your database.
 
 ## Designed for coding agents
 
@@ -10,23 +10,13 @@ This codebase is designed for coding agents.
 
 Because trace data, agent code, system logs, and the iteration tool all live in one place, coding agents like Claude Code can read, update, and improve the system end-to-end.
 
-Five prompts cover the full agent development lifecycle:
+Five prompts that cover the full agent development lifecycle:
 
-1. **Create.** Claude asks a few questions, scaffolds the agent file, registers it in `app/main.py`, adds quick prompts to `app/config.yaml`, restarts the container, and smoke-tests via cURL. Usually 5-10 minutes for a simple agent.
-2. **Improve.** Hardens and fine-tunes your agent based on its existing spec. Claude derives probes from the agent's `INSTRUCTIONS`, runs them against the live container, judges the responses, and edits until they pass. No input from you.
-3. **Extend.** Add a new feature to an agent. You direct, Claude executes. Add tools, refine prompts, fix bugs. The Agno docs MCP is loaded so toolkit research is grounded in the real API.
+1. **Create.** Claude asks a few questions, creates the agent, registers it in `app/main.py`, adds quick prompts to `app/config.yaml`, restarts the container, and smoke-tests via cURL.
+2. **Improve.** Claude fine-tunes your agent based on its existing spec. Claude derives probes from the agent's `INSTRUCTIONS`, runs them against the live container, judges the responses, and edits until they pass.
+3. **Extend.** Claude adds a new feature to an agent. Add tools, refine prompts, fix bugs. The Agno docs MCP is loaded so toolkit research is grounded in the real API.
 4. **Hill Climb.** Claude runs the eval suite, diagnoses failures, and fixes what's in scope. Stops when all cases pass.
 5. **Review.** Claude sweeps the repo for drift between docs, code, and config. Auto-fixes mechanical drift like stale paths and missing env vars; flags anything bigger.
-
-## Own the stack
-
-The auto-improvement loop is possible because we own the full stack. From start to end:
-
-1. **Runtime.** The server that runs your agents. FastAPI running Agno AgentOS (see `app/main.py`).
-2. **Storage.** Sessions, memory, knowledge, and traces all stored in PostgreSQL + pgvector.
-3. **Connectors.** Hundreds of toolkits and MCP servers available via Agno to connect agents to external tools.
-4. **Interfaces.** Expose agents in Slack, Discord, Telegram. Slack is already wired (see `app/main.py`). Discord, Telegram, and custom UIs can be added using [Agno interfaces](https://docs.agno.com/agent-os/interfaces/overview?utm_source=github&utm_medium=example-repo&utm_campaign=agent-platform&utm_content=agent-platform&utm_term=railway).
-5. **Infrastructure.** Docker locally, Railway in production.
 
 ## Get Started
 
@@ -58,7 +48,7 @@ Open [Claude Code](https://claude.ai/code) in this repo and paste:
 Run docs/create-new-agent.md in a new branch
 ```
 
-Claude asks a few questions, generates the agent file in `agents/`, registers it in `app/main.py`, adds prompts to `app/config.yaml`, restarts the container, and smoke-tests via cURL. The container restart is needed because uvicorn's reloader doesn't reliably pick up newly-registered modules. Usually 5-10 minutes for a simple agent.
+Claude asks a few questions, generates the agent file in `agents/`, registers it in `app/main.py`, adds prompts to `app/config.yaml`, restarts the container, and smoke-tests via cURL. Usually 5-10 minutes for a simple agent.
 
 Two reference agents are available in the template for you to study and copy from:
 
@@ -66,8 +56,6 @@ Two reference agents are available in the template for you to study and copy fro
 |---|---|---|
 | WebSearch | Direct tools | `parallel_search` / `parallel_extract` (needs `PARALLEL_API_KEY`); `web_search` / `web_fetch` keyless |
 | CodeSearch | Context provider sub-agent | `query_my_codebase` |
-
-**Direct tools**: the agent sees each tool individually. **Context provider**: the agent sees one `query_<thing>` tool that hands off to a sub-agent. Two patterns to copy from when you build your own.
 
 ### Step 3: Chat with your agent
 
