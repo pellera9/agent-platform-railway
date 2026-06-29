@@ -39,7 +39,7 @@ Restate the agent's purpose to the user in 1-2 sentences before asking what to c
 
 ## 2. Ask what to improve
 
-Use the `AskUserQuestion` tool with these branches (multi-select allowed if the user wants multiple changes in one pass — handle them sequentially in Steps 3-6, then loop):
+Use the coding agent's structured user-input control when available (for example, Claude Code's `AskUserQuestion`, Codex's user-input tool, or an equivalent) with these branches. If no structured control is available, ask the same choices in concise plain text. Multi-select is fine if the user wants multiple changes in one pass — handle them sequentially in Steps 3-6, then loop:
 
 - **Add a tool** — new MCP server, agno toolkit, or function tool.
 - **Add a capability** — knowledge base (RAG), memory tweak, sub-agent / context provider, scheduled task.
@@ -136,7 +136,7 @@ Show the user the response and the tool calls. Did the change land?
 
 - **Yes** — go to Step 7.
 - **Almost** — one more edit pass. Iterate at most 2-3 times before stopping and asking the user how they want to proceed (revert, try a different approach, accept and move on).
-- **No / made it worse** — surface what happened. Offer to revert (`git checkout agents/<slug>.py`) before trying again.
+- **No / made it worse** — surface what happened. Offer to revert only your last patch after showing `git diff agents/<slug>.py`; do not discard unrelated user edits.
 
 ## 7. Loop or wrap up
 

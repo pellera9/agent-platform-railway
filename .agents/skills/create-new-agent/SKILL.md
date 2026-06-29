@@ -1,6 +1,6 @@
 ---
 name: create-new-agent
-description: Add a new agent to this AgentOS. Runs guided discovery or takes a concrete idea, then generates agents/<slug>.py, registers it in app/main.py, adds quick prompts, restarts the container, and smoke-tests it live. Use whenever the user wants to add or create a new agent.
+description: Add a new agent to this AgentOS. Runs guided discovery or takes a concrete idea, then generates agents/slug.py, registers it in app/main.py, adds quick prompts, restarts the container, and smoke-tests it live. Use whenever the user wants to add or create a new agent.
 ---
 
 # Create a New Agent
@@ -17,13 +17,13 @@ If it isn't reachable, ask the user to run `docker compose up -d --build` and wa
 
 ## 1. Ask the user
 
-**Ask via the `AskUserQuestion` tool** for every choice-shaped prompt below — the branching opener, the role pick, the systems multiselect, the agent-idea suggestions, and the **Pattern** pick. It renders click-to-select buttons, much smoother than parsing free-text replies. Use plain prompts only for free-form fields (the recurring-task description, the slug).
+Use the coding agent's structured user-input control when available (for example, Claude Code's `AskUserQuestion`, Codex's user-input tool, or an equivalent) for every choice-shaped prompt below — the branching opener, the role pick, the systems multiselect, the agent-idea suggestions, and the **Pattern** pick. If no structured control is available, ask the same choices in concise plain text. Use plain prompts for free-form fields (the recurring-task description, the slug).
 
 Open with a single branching question — don't dump five questions at once:
 
 > Do you have an agent in mind, or would you like a guided experience?
 
-If the user immediately describes a concrete agent ("build me a GitHub PR reviewer"), they've picked the second branch — skip to **Specifics**.
+If the user immediately describes a concrete agent ("build me a GitHub PR reviewer"), treat that as "agent in mind" and skip to **Specifics**.
 
 ### Guided experience
 
@@ -68,7 +68,7 @@ For each toolkit, capture four things:
 - **Import path** (e.g. `from agno.tools.exa import ExaTools`).
 - **Constructor args** that matter for this agent (categories, domains, max_results, etc.).
 - **Required env vars** — feed these back into Step 1, item 4.
-- **Pip dependencies** — some toolkits need extra packages (`exa-py`, `anthropic`, `jina`, `yfinance`, …). The toolkit's `Prerequisites` section lists them. Capture now, install in Step 6.
+- **Pip dependencies** — some toolkits need extra packages (`exa-py`, `anthropic`, `jina`, `yfinance`, …). The toolkit's `Prerequisites` section lists them. Capture now, then add them to `pyproject.toml` before generating `requirements.txt` in Step 6.
 
 If the toolkit's docs page has no `Prerequisites` or `Authentication` section, the toolkit is keyless and needs no env vars or extra pip deps (e.g. HackerNews, ArXiv, Wikipedia, DuckDuckGo).
 
@@ -157,7 +157,7 @@ After Step 4, **always restart the container** — uvicorn's hot-reload doesn't 
   docker compose restart agentos-api
   ```
 
-- **New pip deps added in Step 2** — update the lockfile and rebuild:
+- **New pip deps found in Step 2** — add each package to [`pyproject.toml`](../../../pyproject.toml), then update `requirements.txt` and rebuild:
 
   ```bash
   ./scripts/generate_requirements.sh

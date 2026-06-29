@@ -1,6 +1,6 @@
 ---
 name: improve-agent
-description: Autonomous hardening loop for an existing agent — derive probes from the agent's INSTRUCTIONS, run them against the live container, judge responses, edit agents/<slug>.py, and re-probe until it reliably does what its instructions say. No user input needed. Use to harden an agent against its stated intent; to make a concrete change instead, use extend-agent.
+description: Autonomous hardening loop for an existing agent — derive probes from the agent's INSTRUCTIONS, run them against the live container, judge responses, edit the agent file, and re-probe until it reliably does what its instructions say. No user input needed. Use to harden an agent against its stated intent; to make a concrete change instead, use extend-agent.
 ---
 
 # Improve an Agent
