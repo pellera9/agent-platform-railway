@@ -2,9 +2,8 @@
 Deployment Check
 ================
 
-A deterministic reference workflow that checks whether this AgentOS deployment
-is wired correctly. It performs no model calls and has no external delivery
-side effects; the result is a markdown readiness report returned by the run.
+A reference workflow that checks whether this AgentOS deployment is wired correctly.
+It performs no model calls and has no external delivery side effects.
 """
 
 from dataclasses import dataclass
@@ -107,8 +106,7 @@ def _check_reference_components() -> CheckResult:
 
 def _check_schedule_flag() -> CheckResult:
     if getenv("ENABLE_DEPLOY_CHECK", "True") == "True":
-        cron = getenv("DEPLOY_CHECK_CRON", "0 13 * * *")
-        return _pass("Schedule", f"Deployment-check cron is armed: {cron}.")
+        return _pass("Schedule", "Deployment-check cron is armed (daily, 13:00 UTC).")
     return _pass("Schedule", "Deployment-check cron is disabled (ENABLE_DEPLOY_CHECK=False); run endpoint remains available.")
 
 
