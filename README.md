@@ -38,7 +38,7 @@ docker compose up -d --build
 
 Confirm AgentOS is live at [http://localhost:8000/docs](http://localhost:8000/docs).
 
-Connect a UI: open [os.agno.com](https://os.agno.com?utm_source=github&utm_medium=example-repo&utm_campaign=agent-platform&utm_content=agent-platform&utm_term=railway), click **Add OS** → **Local**, enter `http://localhost:8000`, and connect.
+Connect a UI: open [os.agno.com](https://os.agno.com?utm_source=github&utm_medium=example-repo&utm_campaign=agent-platform&utm_content=agent-platform&utm_term=railway), click **Connect OS** → **Local**, enter `http://localhost:8000`, and connect.
 
 ### Step 2: Create your first agent
 
@@ -126,7 +126,7 @@ The deploy scripts read `.env.production` first and fall back to `.env`. This le
 
 This provisions Postgres and the app service on the same private network.
 
-### 3. Your first deploy will fail by design
+### 3. Set production auth
 
 Token-Based Authorization is on by default. Without `JWT_VERIFICATION_KEY` or `JWT_JWKS_FILE`, the app refuses to serve traffic. The platform's job is to keep your data off the public web, so the safe default is "refuse to start" with an authentication token.
 
@@ -136,13 +136,16 @@ Token-Based Auth gives you three things:
 2. **Per-request identity.** Middleware parses the token and injects `user_id`, `session_id`, and custom claims into your endpoints. Each request is tied to a user and session.
 3. **Granular permissions.** User tokens can run an agent and view their own sessions. Admin tokens read everyone's sessions and test any agent.
 
-### 4. Get your verification key
+During `./scripts/railway/up.sh`, the script creates your Railway domain before the first deploy. If production auth is missing, it prints that domain and pauses so you can mint the key before the app starts.
 
-> **Heads up.** Live connections at os.agno.com are a paid feature. Use coupon code `PLATFORM30` for a one-month free trial. Cancel before the trial ends if you don't want to be charged.
+> **Heads up.** Live AgentOS Connections are a paid feature. Use `PLATFORM30` to get 1 month off.
 
-1. Open [os.agno.com](https://os.agno.com?utm_source=github&utm_medium=example-repo&utm_campaign=agent-platform&utm_content=agent-platform&utm_term=railway), click **Add OS** → **Live**, enter your Railway domain, and connect.
-2. Enable **Token Based Authorization**.
-3. Paste the public key into `.env.production` (full PEM block, no surrounding quotes):
+1. Open [os.agno.com](https://os.agno.com?utm_source=github&utm_medium=example-repo&utm_campaign=agent-platform&utm_content=agent-platform&utm_term=railway), click **Connect OS** → **Live**, enter your Railway domain, and connect.
+2. Name it **Live Agent Platform**.
+3. Go to **Settings** → **OS & Security**.
+4. Turn **Token-Based Authorization (JWT)** on.
+5. Copy the public key.
+6. Paste the full public key into the `up.sh` prompt. The script saves it into your env file for future syncs:
 
 ```sh
 JWT_VERIFICATION_KEY=-----BEGIN PUBLIC KEY-----
@@ -150,7 +153,9 @@ MIIBIjANBgkq...
 -----END PUBLIC KEY-----
 ```
 
-### 5. Sync env and verify
+You can also save it in `.env.production` yourself and press Enter at the prompt. Either way, the script re-reads the env file and pushes `JWT_VERIFICATION_KEY` or `JWT_JWKS_FILE` before deploying. If you run non-interactively or skip the prompt, you can still sync later with `./scripts/railway/env-sync.sh`.
+
+### 4. Verify
 
 `scripts/railway/up.sh` already set `AGENTOS_URL` to your Railway domain (on the service and in `.env.production`) so the in-cluster scheduler's cron triggers reach AgentOS — no action needed unless you're fronting it with a custom domain or tunnel, in which case set it by hand:
 
@@ -159,7 +164,7 @@ MIIBIjANBgkq...
 AGENTOS_URL=https://<your-app>.up.railway.app
 ```
 
-Then push every variable to Railway:
+For later env changes, push every variable to Railway:
 
 ```sh
 ./scripts/railway/env-sync.sh
@@ -173,7 +178,7 @@ railway logs --service agent-os
 
 Once you see successful requests, AgentOS will connect through your Railway domain and you're live.
 
-### 6. Redeploy after code changes
+### 5. Redeploy after code changes
 
 For one-off updates from your machine:
 
