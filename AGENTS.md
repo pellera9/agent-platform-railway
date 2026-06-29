@@ -12,13 +12,13 @@ A unified agent platform built on [Agno](https://docs.agno.com), shipped as a co
 AgentOS  (app/main.py)
 ├── WebSearch    (agents/web_search.py)   — Parallel SDK or keyless MCPTools
 ├── CodeSearch   (agents/code_search.py)  — WorkspaceContextProvider
-└── UsageRollup  (workflows/usage_rollup.py) — reference workflow, fired by app/schedules.py
+└── DeployCheck  (workflows/deployment_check.py) — reference workflow, fired by app/schedules.py
 ```
 
 Shared:
 - PostgreSQL + pgvector for sessions, memory, knowledge.
 - `app.settings.default_model()` returns `OpenAIResponses(id="gpt-5.5")` — bump the model in one place.
-- Scheduler enabled by default (`scheduler=True`); `app/schedules.py` registers schedules from the lifespan. One reference schedule (a daily usage rollup) delivers to Slack, so it arms only when `SLACK_BOT_TOKEN` + `SLACK_CHANNEL` are set.
+- Scheduler enabled by default (`scheduler=True`); `app/schedules.py` registers schedules from the lifespan. One reference schedule (deployment check) ships **off** — set `ENABLE_DEPLOY_CHECK=True` to arm it.
 - Slack interface lights up automatically when both `SLACK_BOT_TOKEN` and `SLACK_SIGNING_SECRET` are set.
 - JWT auth on whenever `RUNTIME_ENV == "prd"` (so production deploys are gated by default).
 
@@ -31,7 +31,7 @@ Shared:
 | [`app/config.yaml`](app/config.yaml) | Quick prompts per agent (keyed by agent `id`). |
 | [`agents/web_search.py`](agents/web_search.py) | Reference agent — direct tools (Parallel SDK or MCP). |
 | [`agents/code_search.py`](agents/code_search.py) | Reference agent — context provider. |
-| [`workflows/usage_rollup.py`](workflows/usage_rollup.py) | Reference workflow — a deterministic `Step` that reads 24h of activity from Postgres and posts a rollup to Slack; imported into `app/main.py` and passed to `AgentOS(workflows=[...])`. |
+| [`workflows/deployment_check.py`](workflows/deployment_check.py) | Reference workflow — a deterministic `Step` that checks DB, auth, scheduler URL, Slack config, and component imports; imported into `app/main.py` and passed to `AgentOS(workflows=[...])`. |
 | [`app/schedules.py`](app/schedules.py) | `register_schedules()` — cron registration, called from the lifespan (idempotent, fail-soft). |
 | [`db/session.py`](db/session.py) | `get_postgres_db()`, `create_knowledge()`. |
 | [`db/url.py`](db/url.py) | Builds the database URL from env. |
@@ -176,11 +176,11 @@ Invoke a skill by name (`/extend-agent`) or just describe the task — Claude Co
 | `RUNTIME_ENV` | no | `prd` | `dev` enables hot-reload and disables JWT. Compose sets this to `dev` for local. |
 | `JWT_VERIFICATION_KEY` | prd | — | Public key from os.agno.com. Required when `RUNTIME_ENV=prd` and `authorization=True`. |
 | `AGENTOS_URL` | no | `http://127.0.0.1:8000` | Scheduler base URL — cron triggers reach AgentOS over this. `scripts/railway/up.sh` auto-sets it to the created Railway domain (and writes it back into your env file); only set it by hand for custom domains or tunnels. Left at the localhost default in prod, scheduled jobs silently never fire. |
-| `USAGE_ROLLUP_CRON` | no | `0 13 * * *` | Cron for the usage-rollup schedule (UTC). Only used once the rollup is armed (Slack configured). |
+| `ENABLE_DEPLOY_CHECK` | no | `False` | Arms the reference deployment-check cron (`app/schedules.py`). The workflow is runnable on demand regardless. |
+| `DEPLOY_CHECK_CRON` | no | `0 13 * * *` | Cron for the deployment check (UTC). Only used when `ENABLE_DEPLOY_CHECK=True`. |
 | `PARALLEL_API_KEY` | no | — | Authenticates the WebSearch Agent's Parallel SDK / MCP connection (raises rate ceiling). |
-| `SLACK_BOT_TOKEN` | no | — | Bot token. Set with signing secret to enable the Slack interface; set with `SLACK_CHANNEL` to arm the usage-rollup cron. |
+| `SLACK_BOT_TOKEN` | no | — | Bot token. Set with signing secret to enable the Slack interface. |
 | `SLACK_SIGNING_SECRET` | no | — | Signing secret. Both it and the bot token must be set for the interface to load. |
-| `SLACK_CHANNEL` | no | — | Channel ID the usage rollup posts to. Setting it (with `SLACK_BOT_TOKEN`) arms the daily rollup cron. |
 | `DB_HOST` / `DB_PORT` / `DB_USER` / `DB_PASS` / `DB_DATABASE` | no | matches compose | Postgres connection. |
 | `DB_DRIVER` | no | `postgresql+psycopg` | SQLAlchemy driver. |
 | `AGNO_DEBUG` | no | `False` | If `True`, agno emits verbose debug logs. Compose sets this for dev. |
@@ -195,7 +195,7 @@ Invoke a skill by name (`/extend-agent`) or just describe the task — Claude Co
 
 `scheduler=True` is on in [`app/main.py`](app/main.py). A schedule is a cron expression + an HTTP endpoint (a workflow or agent run); the poller fires due jobs in the background. Registration lives in [`app/schedules.py`](app/schedules.py)'s `register_schedules()`, called from the lifespan — idempotent (`if_exists="update"`, safe on every boot) and fail-soft (a bad schedule logs a warning rather than crashing startup).
 
-**Reference example.** [`workflows/usage_rollup.py`](workflows/usage_rollup.py) is a one-step, **deterministic** workflow — no LLM, no token cost — that reads the last 24h from the `agno_sessions` table and reports sessions + runs per agent. [`app/schedules.py`](app/schedules.py) registers a daily cron that hits its endpoint (`POST /workflows/usage-rollup/runs`). Because the rollup is *delivered* to Slack, the cron only arms when `SLACK_BOT_TOKEN` + `SLACK_CHANNEL` are set (setting the channel is the opt-in); without Slack the workflow still runs on demand and logs the rollup. Tune the time with `USAGE_ROLLUP_CRON`.
+**Reference example.** [`workflows/deployment_check.py`](workflows/deployment_check.py) is a one-step, **deterministic** workflow — no LLM, no token cost — that returns a deployment readiness report. It checks DB connectivity and tables, JWT config, scheduler URL, Slack env consistency, and reference component imports. [`app/schedules.py`](app/schedules.py) registers a daily cron that hits its endpoint (`POST /workflows/deployment-check/runs`). It ships **off** by default; arm it with `ENABLE_DEPLOY_CHECK=True` and tune the time with `DEPLOY_CHECK_CRON`. The workflow is always runnable on demand regardless of the flag.
 
 To add your own: define a `Workflow` in `workflows/`, import it into [`app/main.py`](app/main.py) and add it to `AgentOS(workflows=[...])`, and register a schedule for it in `register_schedules()`. Other common uses: **maintenance** (purge old sessions, vacuum tables), **periodic re-evaluation** (run `python -m evals` weekly to catch regressions).
 
