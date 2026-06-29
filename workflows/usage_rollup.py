@@ -25,9 +25,13 @@ from sqlalchemy import create_engine, text
 
 from db import db_url, get_postgres_db
 
-# agno stores agent/team/workflow sessions here by default (override with
-# PostgresDb(session_table=...)). ``created_at`` is a unix timestamp (seconds).
-SESSIONS_TABLE = "agno_sessions"
+# Resolve the sessions table from the configured PostgresDb rather than hardcoding
+# it: agno creates tables under ``db_schema`` (default "ai"), so a bare
+# ``agno_sessions`` only resolves when the search_path happens to include that
+# schema (e.g. the default DB_USER=ai). Fully qualify it so a custom DB_USER /
+# schema still works. ``created_at`` is a unix timestamp (seconds).
+_db = get_postgres_db()
+SESSIONS_TABLE = f'"{_db.db_schema}"."{_db.session_table_name}"'
 WINDOW_SECONDS = 24 * 60 * 60
 
 
@@ -101,6 +105,6 @@ usage_rollup_workflow = Workflow(
     id="usage-rollup",
     name="Usage Rollup",
     description="Summarize the last 24h of agent activity (sessions + runs per agent) from Postgres.",
-    db=get_postgres_db(),
+    db=_db,
     steps=[Step(name="usage-rollup", executor=usage_rollup_step)],
 )

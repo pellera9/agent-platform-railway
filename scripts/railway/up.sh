@@ -176,6 +176,13 @@ if [[ -z "$AGENTOS_URL" && -n "$APP_URL" ]]; then
     persist_env_var AGENTOS_URL "$APP_URL" "$ENV_FILE"
     [[ -n "$ENV_FILE" ]] && AGENTOS_URL_PERSISTED=1
     echo -e "${DIM}Set AGENTOS_URL=${APP_URL} (Railway${AGENTOS_URL_PERSISTED:+ + ${ENV_FILE}})${NC}"
+elif [[ -z "$AGENTOS_URL" ]]; then
+    # Domain creation/parse failed and nothing was pinned — don't ship silently
+    # with the localhost default, or scheduled jobs will never fire in prod.
+    echo -e "${BOLD}Warning:${NC} couldn't determine the Railway domain, so AGENTOS_URL is unset."
+    echo -e "${DIM}  Scheduled jobs won't reach AgentOS until you set it. Once the domain is live:${NC}"
+    echo -e "${DIM}  railway variables --set AGENTOS_URL=https://<your-domain> --service agent-os${NC}"
+    echo -e "${DIM}  (or add it to ${ENV_FILE:-.env.production} and run ./scripts/railway/env-sync.sh)${NC}"
 fi
 
 echo ""
