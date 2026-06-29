@@ -2,7 +2,7 @@
 
 An agent platform you build, run, and improve using coding agents.
 
-This is a starter agent-platform built with **AgentOS on FastAPI and Postgres**. Everything runs in your cloud, with your data stored in your database.
+This is a starter agent-platform built with [Agno](https://docs.agno.com). Everything runs in your cloud, with your data stored in your database.
 
 ## Designed for coding agents
 
@@ -10,7 +10,7 @@ This codebase is designed for coding agents.
 
 Because trace data, agent code, system logs, and the iteration tool all live in one place, coding agents like Claude Code can read, update, and improve the system end-to-end.
 
-Five prompts that cover the full agent development lifecycle:
+Five skills that cover the full agent development lifecycle:
 
 1. **Create.** Claude asks a few questions, creates the agent, registers it in `app/main.py`, adds quick prompts to `app/config.yaml`, restarts the container, and smoke-tests via cURL.
 2. **Improve.** Claude fine-tunes your agent based on its existing spec. Claude derives probes from the agent's `INSTRUCTIONS`, runs them against the live container, judges the responses, and edits until they pass.
@@ -42,7 +42,7 @@ Connect a UI: open [os.agno.com](https://os.agno.com?utm_source=github&utm_mediu
 
 ### Step 2: Create your first agent
 
-Open [Claude Code](https://claude.ai/code) in this repo and run the skill:
+Open your coding agent of choice (Claude Code, Codex, Cursor, etc.) and run the skill:
 
 ```
 /create-new-agent
@@ -128,7 +128,7 @@ This provisions Postgres and the app service on the same private network.
 
 ### 3. Your first deploy will fail by design
 
-Token-Based Authorization is on by default. Without `JWT_VERIFICATION_KEY`, the app refuses to serve traffic. The platform's job is to keep your data off the public web, so the safe default is "refuse to start" with an authentication token.
+Token-Based Authorization is on by default. Without `JWT_VERIFICATION_KEY` or `JWT_JWKS_FILE`, the app refuses to serve traffic. The platform's job is to keep your data off the public web, so the safe default is "refuse to start" with an authentication token.
 
 Token-Based Auth gives you three things:
 
@@ -274,7 +274,8 @@ See [Agno tools](https://docs.agno.com/tools/toolkits?utm_source=github&utm_medi
 |----------|----------|---------|-------------|
 | `OPENAI_API_KEY` | yes | none | OpenAI key for models and embeddings. |
 | `RUNTIME_ENV` | no | `prd` | `dev` enables hot-reload and disables JWT. Compose sets this to `dev` for local. |
-| `JWT_VERIFICATION_KEY` | prd | none | Public key from os.agno.com. Required when `RUNTIME_ENV=prd`. |
+| `JWT_VERIFICATION_KEY` | prd | none | Public key from os.agno.com. Required when `RUNTIME_ENV=prd`, unless `JWT_JWKS_FILE` is set. |
+| `JWT_JWKS_FILE` | prd | none | Path to a JWKS file; alternative to `JWT_VERIFICATION_KEY` for production JWT verification. |
 | `AGENTOS_URL` | no | `http://127.0.0.1:8000` | Scheduler base URL. `scripts/railway/up.sh` auto-sets it to your Railway domain; set by hand only for a custom domain or tunnel. |
 | `ENABLE_DEPLOY_CHECK` | no | `True` | The reference deployment-check cron runs daily by default. Set `False` to disable; the workflow is runnable on demand regardless. |
 | `PARALLEL_API_KEY` | no | none | Authenticates the WebSearch Agent's Parallel SDK / MCP connection. |
