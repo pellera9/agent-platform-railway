@@ -5,9 +5,9 @@ description: Scaffold a brand-new agent in this AgentOS — guided discovery or 
 
 # Create a New Agent
 
-> _**Coding-agent workflow** — a `/slash-command` your coding agent (Claude Code, Codex, others) runs while developing this repo. Invoke it by name (e.g. `/extend-agent`) or describe the task and it triggers automatically._
+> _**Coding-agent workflow** — a `/slash-command` your coding agent (Claude Code, Codex, others) runs while developing this repo. Invoke it by name (e.g. `/create-new-agent`) or describe the task and it triggers automatically._
 
-You are creating a new agent in this AgentOS template. The user already has the platform running locally on `http://localhost:8000` (`RUNTIME_ENV=dev`). Uvicorn hot-reloads on edits inside an existing module, but **registering a new agent module requires a container restart** — see Step 6.
+You are creating a new agent in this AgentOS. The user already has the platform running locally on `http://localhost:8000` (`RUNTIME_ENV=dev`). Uvicorn hot-reloads on edits inside an existing module, but **registering a new agent module requires a container restart** — see Step 6.
 
 ## 0. Preconditions
 
@@ -54,7 +54,7 @@ If the user came in with a concrete agent in mind, ask all five below in one con
    - (c) build anyway and surface the auth error during smoke test.
 5. **Slug** — short kebab-case id (e.g. `linear-agent`). Used as the agent's `id`, in URLs, and in `app/config.yaml`. Propose one based on the agent's purpose.
 
-Model defaults to `gpt-5.4` via `app.settings.default_model()` — override only if the user asks.
+Model defaults to `gpt-5.5` via `app.settings.default_model()` — override only if the user asks.
 
 ## 2. Ground the design in agno docs
 

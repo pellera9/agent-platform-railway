@@ -1,6 +1,6 @@
 ---
 name: extend-agent
-description: User-driven loop to change an existing agent in this repo — add a tool/MCP server/toolkit, add a capability (knowledge base, memory, sub-agent, scheduled task), refine its instructions, or fix a specific known bug, verifying each change against the live container. Use whenever the user names a concrete change to an agent. For autonomous hardening with no specific change in mind, use improve-agent.
+description: User-driven loop to change an existing agent in this AgentOS — add a tool/MCP server/toolkit, add a capability (knowledge base, memory, sub-agent, scheduled task), refine its instructions, or fix a specific known bug, verifying each change against the live container. Use whenever the user names a concrete change to an agent. For autonomous hardening with no specific change in mind, use improve-agent.
 ---
 
 # Extend an Agent

@@ -5,7 +5,7 @@ description: Repo-wide drift sweep for public-readiness — diff docs against co
 
 # Review and Improve
 
-> _**Coding-agent workflow** — a `/slash-command` your coding agent (Claude Code, Codex, others) runs while developing this repo. Invoke it by name (e.g. `/extend-agent`) or describe the task and it triggers automatically._
+> _**Coding-agent workflow** — a `/slash-command` your coding agent (Claude Code, Codex, others) runs while developing this repo. Invoke it by name (e.g. `/review-and-improve`) or describe the task and it triggers automatically._
 
 You are sweeping the whole repo for public-consumption readiness — docs accuracy, every agent reachable, scripts that actually do what the docs claim, no stale env vars, format + validate clean. Most drift is mechanical (renamed file, missing entry in `example.env`, new agent not in the architecture diagram) and you fix it in place. The rest is a punch list you surface to the user.
 
@@ -20,7 +20,7 @@ This is a **recurring sweep** — meant to be re-run regularly. On a clean repo 
 - Stale file paths in any doc.
 - Missing entries in [`example.env`](../../../example.env) for env vars the code actually reads.
 - Stale entries in `example.env` for vars nothing reads — delete unless the surrounding comment block describes them as optional/future ("alternate model providers", "future feature"). Flag instead of fixing if intent is unclear.
-- Architecture diagram in `AGENTS.md` / `README.md` missing a registered agent.
+- Architecture diagram in `AGENTS.md` / `README.md` missing a registered agent or workflow.
 - New agent file on disk not yet imported in [`app/main.py`](../../../app/main.py) (add the import + append to `agents=[...]`).
 - Missing `quick_prompts` block for a registered agent (draft three from the agent's `INSTRUCTIONS`; flag the new entries so the user can refine).
 - Missing or wrong cross-links between docs and the coding-agent skills in [`.agents/skills/*/SKILL.md`](../../../.agents/skills/) (and between skills).
@@ -46,7 +46,7 @@ Restate the surface area in 4-5 lines so the user can redirect before you read e
 
 - Top-level docs: [`README.md`](../../../README.md), [`AGENTS.md`](../../../AGENTS.md), [`example.env`](../../../example.env).
 - Coding-agent skills: [`.agents/skills/*/SKILL.md`](../../../.agents/skills/) (frontmatter `name` matches the folder; `description` is trigger-rich; relative links resolve from two levels deep, i.e. `../../../`).
-- Code: [`app/`](../../../app/), [`agents/`](../../../agents/), [`db/`](../../../db/), [`evals/`](../../../evals/), [`scripts/`](../../../scripts/).
+- Code: [`app/`](../../../app/), [`agents/`](../../../agents/), [`workflows/`](../../../workflows/), [`db/`](../../../db/), [`evals/`](../../../evals/), [`scripts/`](../../../scripts/).
 - Configs: [`compose.yaml`](../../../compose.yaml), [`Dockerfile`](../../../Dockerfile), [`pyproject.toml`](../../../pyproject.toml), [`railway.json`](../../../railway.json).
 
 Skip: `.venv/`, `*_cache/`, `.git/`, anything generated.
@@ -62,6 +62,8 @@ Read every file in scope. Build a mental model of:
 - **Env vars actually read** — grep `os.environ`, `os.getenv`, `getenv(`, plus settings/config modules.
 - **Quick prompts** — what's in [`app/config.yaml`](../../../app/config.yaml) under `chat.quick_prompts`?
 - **Eval cases** — what's in [`evals/cases.py`](../../../evals/cases.py)?
+- **Registered workflows** — what's in `WORKFLOWS` ([`workflows/__init__.py`](../../../workflows/__init__.py)) and passed to `AgentOS(workflows=...)`? Workflow files on disk in [`workflows/`](../../../workflows/)?
+- **Schedules** — what `register_schedules()` ([`app/schedules.py`](../../../app/schedules.py)) registers, and the env flags that gate each (e.g. `ENABLE_DAILY_DIGEST`). Every schedule `endpoint` should map to a real workflow `id`.
 - **Scripts** — for each file in [`scripts/`](../../../scripts/), what does it actually do? (Headers and the first few lines are usually enough.)
 
 Don't write anything yet — read first, fix once.
@@ -78,8 +80,10 @@ The bulk of the work. Diff each pair below; auto-fix per the rules at the top.
 | Every var in `example.env` is read somewhere | `example.env` ↔ code grep | Stale var nobody reads |
 | Every path mentioned in docs exists | `README.md`, `AGENTS.md`, `.agents/skills/*/SKILL.md` ↔ filesystem | Renamed or deleted file |
 | Every script mentioned in docs is real + does what's claimed | docs ↔ `scripts/` | Renamed or behavior drifted |
-| Architecture diagrams match registered agents | `README.md`, `AGENTS.md` Architecture sections | New agent missing from the tree |
+| Architecture diagrams match registered agents + workflows | `README.md`, `AGENTS.md` Architecture sections | New agent or workflow missing from the tree |
 | Eval cases reference real agents + tools | `evals/cases.py` ↔ `agents/` | Slug renamed or tool removed |
+| Every workflow file is registered | [`workflows/`](../../../workflows/) ↔ `WORKFLOWS` ↔ `AgentOS(workflows=...)` | New workflow not added to `WORKFLOWS` |
+| Every schedule hits a real workflow | `app/schedules.py` `endpoint` ↔ workflow `id`s | Endpoint points at a renamed/removed workflow |
 | `Key Files` table in `AGENTS.md` matches reality | `AGENTS.md` ↔ filesystem | Renamed file, deleted file, new file not listed |
 | Skill frontmatter + links resolve | `.agents/skills/*/SKILL.md` ↔ folder name + `../../../` link targets | name≠folder, broken `../../../` path, dead cross-skill link |
 | `.claude/skills` symlink resolves | `.claude/skills` → `../.agents/skills` | Symlink missing or dangling |
