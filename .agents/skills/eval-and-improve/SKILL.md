@@ -1,9 +1,13 @@
+---
+name: eval-and-improve
+description: Run the eval suite (python -m evals), diagnose every failure, fix what's in scope, and loop until all cases pass. Use when evals are failing, or when the user wants to run, diagnose, or repair the eval suite.
+---
+
 # Eval and Improve
 
-> Claude Code prompt. Open Claude Code in this repo and paste:
-> `Run docs/eval-and-improve.md`
+> _**Coding-agent workflow** — a `/slash-command` your coding agent (Claude Code, Codex, others) runs while developing this repo. Invoke it by name (e.g. `/eval-and-improve`) or describe the task and it triggers automatically._
 
-You're running the agent platform's eval suite, diagnosing every failure, fixing what's in scope, and stopping when all cases pass. Surface area is two files: [`evals/cases.py`](../evals/cases.py) (declares cases) and [`evals/__main__.py`](../evals/__main__.py) (runner). Each case uses agno's built-in [`AgentAsJudgeEval`](https://docs.agno.com/evals/agent-as-judge) (LLM judge against a `criteria` rubric, binary pass/fail) and/or [`ReliabilityEval`](https://docs.agno.com/evals/reliability) (asserts which tools fired) — no custom DSL.
+You're running the agent platform's eval suite, diagnosing every failure, fixing what's in scope, and stopping when all cases pass. The eval wiring lives in [`evals/cases.py`](../../../evals/cases.py) (declares cases) and [`evals/__main__.py`](../../../evals/__main__.py) (runner), while fixes may also touch `agents/<slug>.py` or rare one-line config flips in `app/main.py` per Step 3. Each case uses agno's built-in [`AgentAsJudgeEval`](https://docs.agno.com/evals/agent-as-judge) (LLM judge against a `criteria` rubric, binary pass/fail) and/or [`ReliabilityEval`](https://docs.agno.com/evals/reliability) (asserts which tools fired) — no custom DSL.
 
 ## 0. Preconditions
 
@@ -57,7 +61,7 @@ Out of scope (flag for the user, don't do):
 - Editing `db/` or `app/` to make a case pass.
 - Editing agno itself.
 
-For agent quality issues that need fast iteration against a live container (cURL probes, instruction tweaks), hand off to [`docs/improve-agent.md`](improve-agent.md) — its autonomous probe loop is faster than running the full eval suite per change. If the change is user-driven (add a tool, fix a known bug), use [`docs/extend-agent.md`](extend-agent.md) instead.
+For agent quality issues that need fast iteration against a live container (cURL probes, instruction tweaks), hand off to [`improve-agent`](../improve-agent/SKILL.md) — its autonomous probe loop is faster than running the full eval suite per change. If the change is user-driven (add a tool, fix a known bug), use [`extend-agent`](../extend-agent/SKILL.md) instead.
 
 ## 4. Re-run and stop
 
@@ -77,7 +81,7 @@ Stop when `python -m evals` exits 0 **and** prints an `Eval Summary` block. If a
 
 ## 5. Add a new case (if needed)
 
-If diagnosing a failure reveals a missing assertion, add it to [`evals/cases.py`](../evals/cases.py):
+If diagnosing a failure reveals a missing assertion, add it to [`evals/cases.py`](../../../evals/cases.py):
 
 ```python
 Case(
