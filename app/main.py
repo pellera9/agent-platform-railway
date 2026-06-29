@@ -14,7 +14,7 @@ from agents.code_search import code_search
 from agents.web_search import web_search
 from app.schedules import register_schedules
 from db import get_postgres_db
-from workflows.digest import daily_digest_workflow
+from workflows.usage_rollup import usage_rollup_workflow
 
 # ---------------------------------------------------------------------------
 # Environment
@@ -73,7 +73,7 @@ agent_os = AgentOS(
     lifespan=lifespan,
     db=get_postgres_db(),
     agents=[web_search, code_search],
-    workflows=[daily_digest_workflow],
+    workflows=[usage_rollup_workflow],
     interfaces=interfaces,
     config=str(Path(__file__).parent / "config.yaml"),
 )
