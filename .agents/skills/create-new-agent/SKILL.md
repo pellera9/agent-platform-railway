@@ -1,6 +1,6 @@
 ---
 name: create-new-agent
-description: Scaffold a brand-new agent in this AgentOS template — guided discovery or from a concrete idea, then generate agents/<slug>.py, register it in app/main.py, add quick prompts, restart the container, and smoke-test it live. Use whenever the user wants to add or create a new agent.
+description: Scaffold a brand-new agent in this AgentOS — guided discovery or from a concrete idea, then generate agents/<slug>.py, register it in app/main.py, add quick prompts, restart the container, and smoke-test it live. Use whenever the user wants to add or create a new agent.
 ---
 
 # Create a New Agent
