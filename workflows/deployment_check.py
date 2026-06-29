@@ -106,10 +106,10 @@ def _check_reference_components() -> CheckResult:
 
 
 def _check_schedule_flag() -> CheckResult:
-    if getenv("ENABLE_DEPLOY_CHECK") == "True":
+    if getenv("ENABLE_DEPLOY_CHECK", "True") == "True":
         cron = getenv("DEPLOY_CHECK_CRON", "0 13 * * *")
         return _pass("Schedule", f"Deployment-check cron is armed: {cron}.")
-    return _pass("Schedule", "Deployment-check cron is off by default; run endpoint remains available.")
+    return _pass("Schedule", "Deployment-check cron is disabled (ENABLE_DEPLOY_CHECK=False); run endpoint remains available.")
 
 
 def _format_report(checks: list[CheckResult]) -> str:
@@ -141,7 +141,7 @@ def deployment_check_step(_step_input: StepInput) -> StepOutput:
     return StepOutput(content=_format_report(checks), success=not failed)
 
 
-deployment_check_workflow = Workflow(
+deployment_check = Workflow(
     id="deployment-check",
     name="Deployment Check",
     description="Check DB, auth, scheduler URL, Slack config, and reference component imports.",

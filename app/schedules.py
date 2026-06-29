@@ -14,12 +14,12 @@ from db import get_postgres_db
 def register_schedules() -> None:
     """Register schedules (idempotent and fail-soft).
 
-    The deployment check ships off by default. Set `ENABLE_DEPLOY_CHECK=True`
-    to run it on a cron. The workflow stays runnable on demand at
-    `POST /workflows/deployment-check/runs`.
+    The deployment check runs daily by default — it's deterministic and free.
+    Set `ENABLE_DEPLOY_CHECK=False` to disable the cron; the workflow stays
+    runnable on demand at `POST /workflows/deployment-check/runs`.
     """
-    if getenv("ENABLE_DEPLOY_CHECK") != "True":
-        log_info("schedules: deployment-check off (set ENABLE_DEPLOY_CHECK=True to arm the cron)")
+    if getenv("ENABLE_DEPLOY_CHECK", "True") != "True":
+        log_info("schedules: deployment-check disabled (ENABLE_DEPLOY_CHECK=False)")
         return
     try:
         manager = ScheduleManager(get_postgres_db())

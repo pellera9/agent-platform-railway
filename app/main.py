@@ -14,7 +14,7 @@ from agents.code_search import code_search
 from agents.web_search import web_search
 from app.schedules import register_schedules
 from db import get_postgres_db
-from workflows.deployment_check import deployment_check_workflow
+from workflows.deployment_check import deployment_check
 
 # ---------------------------------------------------------------------------
 # Environment
@@ -53,7 +53,7 @@ if SLACK_BOT_TOKEN and SLACK_SIGNING_SECRET:
 @asynccontextmanager
 async def lifespan(app):  # type: ignore[no-untyped-def]
     log_info("AgentOS lifespan: startup")
-    # Register schedules on startup. Idempotent and fail-soft. See app/schedules.py
+    # Register schedules on startup. Idempotent and fail-soft.
     register_schedules()
     try:
         yield
@@ -73,7 +73,7 @@ agent_os = AgentOS(
     lifespan=lifespan,
     db=get_postgres_db(),
     agents=[web_search, code_search],
-    workflows=[deployment_check_workflow],
+    workflows=[deployment_check],
     interfaces=interfaces,
     config=str(Path(__file__).parent / "config.yaml"),
 )

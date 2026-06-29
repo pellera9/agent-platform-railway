@@ -1,8 +1,8 @@
-# Agent Platform on Railway
+# Agent Platform
 
 An agent platform you build, run, and improve using coding agents.
 
-This is a starter agent-platform built with **AgentOS on FastAPI and Postgres**. Everything runs in your cloud, behind your auth, with your data stored in your database.
+This is a starter agent-platform built with **AgentOS on FastAPI and Postgres**. Everything runs in your cloud, with your data stored in your database.
 
 ## Designed for coding agents
 
@@ -210,7 +210,7 @@ Rule of thumb: agents for open questions, teams for routing, workflows for proce
 
 ### Scheduled tasks
 
-`scheduler=True` is on in [`app/main.py`](app/main.py); [`app/schedules.py`](app/schedules.py) registers schedules from the lifespan (idempotent, fail-soft). The template ships a reference: [`workflows/deployment_check.py`](workflows/deployment_check.py) is a deterministic one-step workflow (no LLM, no token cost) that returns a deployment readiness report. It checks DB connectivity and tables, JWT config, scheduler URL, Slack env consistency, and reference component imports. The daily cron ships off by default; set `ENABLE_DEPLOY_CHECK=True` to arm it. The workflow is always runnable on demand at `POST /workflows/deployment-check/runs`.
+`scheduler=True` is on in [`app/main.py`](app/main.py); [`app/schedules.py`](app/schedules.py) registers schedules from the lifespan (idempotent, fail-soft). The template ships a reference: [`workflows/deployment_check.py`](workflows/deployment_check.py) is a deterministic one-step workflow (no LLM, no token cost) that returns a deployment readiness report. It checks DB connectivity and tables, JWT config, scheduler URL, Slack env consistency, and reference component imports. Because it's deterministic and free, the daily cron is on by default; set `ENABLE_DEPLOY_CHECK=False` to disable it. The workflow is always runnable on demand at `POST /workflows/deployment-check/runs`.
 
 To build your own, define a `Workflow` in [`workflows/`](workflows/), import it into [`app/main.py`](app/main.py) and add it to `AgentOS(workflows=[...])`, then register a cron for it. Common uses:
 
@@ -276,8 +276,8 @@ See [Agno tools](https://docs.agno.com/tools/toolkits?utm_source=github&utm_medi
 | `RUNTIME_ENV` | no | `prd` | `dev` enables hot-reload and disables JWT. Compose sets this to `dev` for local. |
 | `JWT_VERIFICATION_KEY` | prd | none | Public key from os.agno.com. Required when `RUNTIME_ENV=prd`. |
 | `AGENTOS_URL` | no | `http://127.0.0.1:8000` | Scheduler base URL. `scripts/railway/up.sh` auto-sets it to your Railway domain; set by hand only for a custom domain or tunnel. |
-| `ENABLE_DEPLOY_CHECK` | no | `False` | Arms the reference deployment-check cron. The workflow is runnable on demand regardless. |
-| `DEPLOY_CHECK_CRON` | no | `0 13 * * *` | Cron for the deployment check (UTC), when enabled. |
+| `ENABLE_DEPLOY_CHECK` | no | `True` | The reference deployment-check cron runs daily by default. Set `False` to disable; the workflow is runnable on demand regardless. |
+| `DEPLOY_CHECK_CRON` | no | `0 13 * * *` | Cron for the deployment check (UTC). Unused when disabled. |
 | `PARALLEL_API_KEY` | no | none | Authenticates the WebSearch Agent's Parallel SDK / MCP connection. |
 | `SLACK_BOT_TOKEN` / `SLACK_SIGNING_SECRET` | no | none | Both must be set to enable the Slack interface. |
 | `DB_HOST` / `DB_PORT` / `DB_USER` / `DB_PASS` / `DB_DATABASE` | no | matches compose | Postgres connection. |
