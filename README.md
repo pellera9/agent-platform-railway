@@ -212,7 +212,7 @@ Rule of thumb: agents for open questions, teams for routing, workflows for proce
 
 `scheduler=True` is on in [`app/main.py`](app/main.py); [`app/schedules.py`](app/schedules.py) registers schedules from the lifespan (idempotent, fail-soft). The template ships a reference: [`workflows/digest.py`](workflows/digest.py) is a one-step workflow that runs WebSearch on a topic, and `app/schedules.py` wires it to a daily cron. It's **off by default** — set `ENABLE_DAILY_DIGEST=true` to arm it (the workflow is runnable on demand at `POST /workflows/daily-digest/runs` either way).
 
-To build your own, add a `Workflow` to `WORKFLOWS` in [`workflows/__init__.py`](workflows/__init__.py) and register a cron for it. Common uses:
+To build your own, define a `Workflow` in [`workflows/`](workflows/), import it into [`app/main.py`](app/main.py) and add it to `AgentOS(workflows=[...])`, then register a cron for it. Common uses:
 
 - **Maintenance.** Purge sessions older than 90 days. Vacuum tables.
 - **Proactive runs.** Every weekday morning, summarize overnight news for your portfolio and send to Slack.

@@ -11,7 +11,7 @@ cron — see `app/schedules.py`.
 Make it yours: swap the agent, the prompt, or the delivery (the brief is just
 logged here — wire a Slack DM, an email, or a DB write to push it somewhere
 durable). Keep the shape: one `Step` whose executor does the work, wrapped in a
-`Workflow` registered with AgentOS (see `workflows/__init__.py`).
+`Workflow` registered with AgentOS in `app/main.py`.
 """
 
 from os import getenv
@@ -55,7 +55,7 @@ async def daily_digest_step(step_input: StepInput) -> StepOutput:
     return StepOutput(content=brief)
 
 
-# The workflow object handed to AgentOS (see workflows/__init__.py). Its ``id``
+# The workflow object handed to AgentOS in app/main.py. Its ``id``
 # is the route segment the scheduler hits: POST /workflows/daily-digest/runs
 # (see app/schedules.py).
 daily_digest_workflow = Workflow(

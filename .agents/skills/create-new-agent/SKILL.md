@@ -1,6 +1,6 @@
 ---
 name: create-new-agent
-description: Scaffold a brand-new agent in this AgentOS — guided discovery or from a concrete idea, then generate agents/<slug>.py, register it in app/main.py, add quick prompts, restart the container, and smoke-test it live. Use whenever the user wants to add or create a new agent.
+description: Add a new agent to this AgentOS. Runs guided discovery or takes a concrete idea, then generates agents/<slug>.py, registers it in app/main.py, adds quick prompts, restarts the container, and smoke-tests it live. Use whenever the user wants to add or create a new agent.
 ---
 
 # Create a New Agent
@@ -68,7 +68,7 @@ For each toolkit, capture four things:
 - **Import path** (e.g. `from agno.tools.exa import ExaTools`).
 - **Constructor args** that matter for this agent (categories, domains, max_results, etc.).
 - **Required env vars** — feed these back into Step 1, item 4.
-- **Pip dependencies** — some toolkits need extra packages (`exa-py`, `anthropic`, `firecrawl-py`, `linear-sdk`, …). The toolkit's `Prerequisites` section lists them. Capture now, install in Step 6.
+- **Pip dependencies** — some toolkits need extra packages (`exa-py`, `anthropic`, `jina`, `yfinance`, …). The toolkit's `Prerequisites` section lists them. Capture now, install in Step 6.
 
 If the toolkit's docs page has no `Prerequisites` or `Authentication` section, the toolkit is keyless and needs no env vars or extra pip deps (e.g. HackerNews, ArXiv, Wikipedia, DuckDuckGo).
 

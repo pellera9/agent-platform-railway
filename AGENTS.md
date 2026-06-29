@@ -31,8 +31,7 @@ Shared:
 | [`app/config.yaml`](app/config.yaml) | Quick prompts per agent (keyed by agent `id`). |
 | [`agents/web_search.py`](agents/web_search.py) | Reference agent — direct tools (Parallel SDK or MCP). |
 | [`agents/code_search.py`](agents/code_search.py) | Reference agent — context provider. |
-| [`workflows/digest.py`](workflows/digest.py) | Reference workflow — one `Step` that runs WebSearch on a schedule. |
-| [`workflows/__init__.py`](workflows/__init__.py) | `WORKFLOWS` registration list handed to `AgentOS(workflows=...)`. |
+| [`workflows/digest.py`](workflows/digest.py) | Reference workflow — one `Step` that runs WebSearch; imported into `app/main.py` and passed to `AgentOS(workflows=[...])`. |
 | [`app/schedules.py`](app/schedules.py) | `register_schedules()` — cron registration, called from the lifespan (idempotent, fail-soft). |
 | [`db/session.py`](db/session.py) | `get_postgres_db()`, `create_knowledge()`. |
 | [`db/url.py`](db/url.py) | Builds the database URL from env. |
@@ -199,7 +198,7 @@ Invoke a skill by name (`/extend-agent`) or just describe the task — Claude Co
 
 **Reference example.** [`workflows/digest.py`](workflows/digest.py) is a one-step workflow that runs the WebSearch agent on a topic; [`app/schedules.py`](app/schedules.py) registers a daily cron that hits its endpoint (`POST /workflows/daily-digest/runs`). It ships **off** — a scheduled agent run costs tokens, so a template shouldn't fire one unprompted. Arm it with `ENABLE_DAILY_DIGEST=true` (tune with `DAILY_DIGEST_CRON`, `DIGEST_TOPIC`). The workflow is always runnable on demand at that endpoint regardless of the flag.
 
-To add your own: define a `Workflow` in `workflows/`, add it to `WORKFLOWS` in [`workflows/__init__.py`](workflows/__init__.py), and register a schedule for it in `register_schedules()`. Other common uses: **maintenance** (purge old sessions, vacuum tables), **periodic re-evaluation** (run `python -m evals` weekly to catch regressions).
+To add your own: define a `Workflow` in `workflows/`, import it into [`app/main.py`](app/main.py) and add it to `AgentOS(workflows=[...])`, and register a schedule for it in `register_schedules()`. Other common uses: **maintenance** (purge old sessions, vacuum tables), **periodic re-evaluation** (run `python -m evals` weekly to catch regressions).
 
 See [agno scheduler docs](https://docs.agno.com/agent-os/scheduler) for the cron API.
 

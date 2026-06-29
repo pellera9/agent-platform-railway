@@ -166,11 +166,11 @@ Target: `web-search`. The user wants the agent to also be able to read PDFs from
 
 **Step 2** — user picks "Add a tool."
 
-**Step 3** — search the agno-docs MCP for "PDF" and "fetch." Find that `MCPTools` with the existing Parallel endpoint already covers `web_fetch` for HTML, but PDF parsing isn't included. Find `agno.tools.firecrawl` (Firecrawl handles PDFs) — capture import, env var (`FIRECRAWL_API_KEY`), pip dep (`firecrawl-py`).
+**Step 3** — search the agno-docs MCP for "PDF" and "fetch." Find that `MCPTools` with the existing Parallel endpoint already covers `web_fetch` for HTML, but PDF parsing isn't included. Find `agno.tools.jina` (Jina Reader turns any URL, PDF, or HTML into clean markdown) — capture import, env var (`JINA_API_KEY`, optional — it works keyless, a key just raises the rate ceiling), pip dep (`jina`).
 
-**Step 4** — propose: *"Add `FirecrawlTools` so `web-search` can fetch and parse PDFs. Needs `FIRECRAWL_API_KEY` in `.env` and `firecrawl-py` in `pyproject.toml`. Add a quick prompt that exercises a PDF URL."* User says yes.
+**Step 4** — propose: *"Add `JinaReaderTools` so `web-search` can fetch and parse PDFs. Needs `jina` in `pyproject.toml`; works keyless, set `JINA_API_KEY` for higher limits. Add a quick prompt that exercises a PDF URL."* User says yes.
 
-Edit `agents/web_search.py` to import `FirecrawlTools` and add it to `tools=[web_tools, FirecrawlTools()]`. Add `FIRECRAWL_API_KEY=` to [`example.env`](../../../example.env). Add `firecrawl-py` to `pyproject.toml`. Add a quick prompt to `app/config.yaml`:
+Edit `agents/web_search.py` to import `JinaReaderTools` and add it to `tools=[web_tools, JinaReaderTools()]`. Add `jina` to `pyproject.toml` (and optionally `JINA_API_KEY=` to [`example.env`](../../../example.env)). Add a quick prompt to `app/config.yaml`:
 
 ```yaml
 web-search:
@@ -179,10 +179,10 @@ web-search:
 
 **Step 5** — pip deps changed: `./scripts/generate_requirements.sh && docker compose up -d --build`. Poll `/health`.
 
-**Step 6** — cURL the agent with the quick prompt. Logs show `Running: scrape_website(` against the arxiv URL. Response is grounded in the PDF content.
+**Step 6** — cURL the agent with the quick prompt. Logs show `Running: read_url(` against the arxiv URL. Response is grounded in the PDF content.
 
 **Step 7** — user says "no, that's it."
 
-**Step 8** — diff summary, commit `feat(web-search): add FirecrawlTools for PDF fetching`, recommend the `improve-agent` skill to harden the broader behavior.
+**Step 8** — diff summary, commit `feat(web-search): add JinaReaderTools for PDF fetching`, recommend the `improve-agent` skill to harden the broader behavior.
 
 That's the loop. Most sessions are smaller — one tool, one rule, one bug.

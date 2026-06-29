@@ -7,6 +7,8 @@ PostgreSQL connection helpers.
 ``create_knowledge()`` for agent knowledge backed by PgVector.
 """
 
+from functools import lru_cache
+
 from agno.db.postgres import PostgresDb
 from agno.knowledge import Knowledge
 from agno.knowledge.embedder.openai import OpenAIEmbedder
@@ -17,8 +19,15 @@ from db.url import db_url
 DB_ID = "agentos-db"
 
 
+@lru_cache(maxsize=None)
 def get_postgres_db(contents_table: str | None = None) -> PostgresDb:
-    """Create a PostgresDb instance.
+    """Return the shared PostgresDb instance (one per ``contents_table``).
+
+    Memoized so every agent/workflow/schedule reuses the *same* object
+    instead of constructing a fresh ``PostgresDb`` (and its own engine /
+    connection pool) on each call. AgentOS groups registered dbs by ``id``
+    and unions their table names, so duplicate instances were never wrong —
+    just wasteful; one shared instance keeps a single pool.
 
     Pass ``contents_table`` only when this database is the ``contents_db``
     of a Knowledge base — it tells agno where to persist document contents.

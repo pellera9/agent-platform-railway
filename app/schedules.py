@@ -1,18 +1,6 @@
 """
-Schedules
-=========
-
-Background schedule registration — which jobs fire and when. This is a
-cross-cutting concern (the scheduler can drive agents or workflows), so it lives
-here rather than inside `workflows/` (the catalog of runnable things).
-
-The scheduler poller (`scheduler=True` in `app/main.py`) checks Postgres for due
-jobs and triggers each against its HTTP endpoint; the `Workflow` objects those
-endpoints point at are defined in `workflows/`.
-
-`register_schedules()` is idempotent (safe on every boot) and called from the
-AgentOS lifespan in `app/main.py`. A failure here must never take startup down,
-so it degrades to a warning.
+AgentOS Schedules
+==================
 """
 
 from os import getenv
