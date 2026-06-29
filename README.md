@@ -210,7 +210,7 @@ Rule of thumb: agents for open questions, teams for routing, workflows for proce
 
 ### Scheduled tasks
 
-`scheduler=True` is on in [`app/main.py`](app/main.py); [`app/schedules.py`](app/schedules.py) registers schedules from the lifespan (idempotent, fail-soft). The template ships a reference: [`workflows/digest.py`](workflows/digest.py) is a one-step workflow that runs WebSearch on a topic, and `app/schedules.py` wires it to a daily cron. It's **off by default** — set `ENABLE_DAILY_DIGEST=true` to arm it (the workflow is runnable on demand at `POST /workflows/daily-digest/runs` either way).
+`scheduler=True` is on in [`app/main.py`](app/main.py); [`app/schedules.py`](app/schedules.py) registers schedules from the lifespan (idempotent, fail-soft). The template ships a reference: [`workflows/digest.py`](workflows/digest.py) is a one-step workflow that runs WebSearch on a topic, and `app/schedules.py` wires it to a daily cron. It's **off by default** — set `ENABLE_DAILY_DIGEST=True` to arm it (the workflow is runnable on demand at `POST /workflows/daily-digest/runs` either way).
 
 To build your own, define a `Workflow` in [`workflows/`](workflows/), import it into [`app/main.py`](app/main.py) and add it to `AgentOS(workflows=[...])`, then register a cron for it. Common uses:
 
@@ -276,7 +276,7 @@ See [Agno tools](https://docs.agno.com/tools/toolkits?utm_source=github&utm_medi
 | `RUNTIME_ENV` | no | `prd` | `dev` enables hot-reload and disables JWT. Compose sets this to `dev` for local. |
 | `JWT_VERIFICATION_KEY` | prd | none | Public key from os.agno.com. Required when `RUNTIME_ENV=prd`. |
 | `AGENTOS_URL` | no | `http://127.0.0.1:8000` | Scheduler base URL. `scripts/railway/up.sh` auto-sets it to your Railway domain; set by hand only for a custom domain or tunnel. |
-| `ENABLE_DAILY_DIGEST` | no | `false` | Arms the reference daily-digest cron (`app/schedules.py`). The workflow is runnable on demand regardless. |
+| `ENABLE_DAILY_DIGEST` | no | `False` | Arms the reference daily-digest cron (`app/schedules.py`). The workflow is runnable on demand regardless. |
 | `DAILY_DIGEST_CRON` | no | `0 13 * * *` | Cron for the daily digest (UTC), when enabled. |
 | `DIGEST_TOPIC` | no | `the most important developments in AI agents` | Subject the daily digest summarizes. |
 | `PARALLEL_API_KEY` | no | none | Authenticates the WebSearch Agent's Parallel SDK / MCP connection. |

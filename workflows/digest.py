@@ -1,17 +1,12 @@
 """
-Daily Digest Workflow
-=====================
+Daily Digest
+============
 
-A reference background **workflow** — the deterministic, schedulable counterpart
-to a chat agent. This one runs the WebSearch agent against a configurable topic
-and returns the summary as the workflow's output (persisted to Postgres, visible
-at os.agno.com). It's the canonical "proactive run" the scheduler can fire on a
-cron — see `app/schedules.py`.
+A reference workflow that runs the WebSearch agent against a configurable topic
+and returns the summary as the workflow's output.
 
 Make it yours: swap the agent, the prompt, or the delivery (the brief is just
-logged here — wire a Slack DM, an email, or a DB write to push it somewhere
-durable). Keep the shape: one `Step` whose executor does the work, wrapped in a
-`Workflow` registered with AgentOS in `app/main.py`.
+logged here — wire a Slack DM, an email, or a DB write to push it somewhere).
 """
 
 from os import getenv

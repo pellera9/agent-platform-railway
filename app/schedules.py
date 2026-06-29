@@ -11,22 +11,15 @@ from agno.utils.log import log_info, log_warning
 from db import get_postgres_db
 
 
-def _enabled(value: str | None) -> bool:
-    return (value or "").strip().lower() in {"1", "true", "yes", "on"}
-
-
 def register_schedules() -> None:
-    """Register background schedules (idempotent — safe on every boot).
+    """Register schedules (idempotent and fail-soft).
 
-    The daily digest is **off by default**: a scheduled agent run costs tokens,
-    so a starter template shouldn't fire one unprompted. Set
-    ``ENABLE_DAILY_DIGEST=true`` to arm it, and tune the time with
-    ``DAILY_DIGEST_CRON`` (UTC). The digest workflow is *always* registered and
-    runnable on demand at ``POST /workflows/daily-digest/runs`` — this flag only
-    controls the cron trigger.
+    The daily digest is off by default.
+
+    Set `ENABLE_DAILY_DIGEST=True` to activate.
     """
-    if not _enabled(getenv("ENABLE_DAILY_DIGEST")):
-        log_info("schedules: daily-digest off (set ENABLE_DAILY_DIGEST=true to arm the cron)")
+    if getenv("ENABLE_DAILY_DIGEST") != "True":
+        log_info("schedules: daily-digest off (set ENABLE_DAILY_DIGEST=True to arm the cron)")
         return
     try:
         manager = ScheduleManager(get_postgres_db())

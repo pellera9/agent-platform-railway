@@ -18,7 +18,7 @@ AgentOS  (app/main.py)
 Shared:
 - PostgreSQL + pgvector for sessions, memory, knowledge.
 - `app.settings.default_model()` returns `OpenAIResponses(id="gpt-5.5")` — bump the model in one place.
-- Scheduler enabled by default (`scheduler=True`); `app/schedules.py` registers schedules from the lifespan. One reference schedule (the daily digest) ships **off** — set `ENABLE_DAILY_DIGEST=true` to arm it.
+- Scheduler enabled by default (`scheduler=True`); `app/schedules.py` registers schedules from the lifespan. One reference schedule (the daily digest) ships **off** — set `ENABLE_DAILY_DIGEST=True` to arm it.
 - Slack interface lights up automatically when both `SLACK_BOT_TOKEN` and `SLACK_SIGNING_SECRET` are set.
 - JWT auth on whenever `RUNTIME_ENV == "prd"` (so production deploys are gated by default).
 
@@ -176,7 +176,7 @@ Invoke a skill by name (`/extend-agent`) or just describe the task — Claude Co
 | `RUNTIME_ENV` | no | `prd` | `dev` enables hot-reload and disables JWT. Compose sets this to `dev` for local. |
 | `JWT_VERIFICATION_KEY` | prd | — | Public key from os.agno.com. Required when `RUNTIME_ENV=prd` and `authorization=True`. |
 | `AGENTOS_URL` | no | `http://127.0.0.1:8000` | Scheduler base URL — cron triggers reach AgentOS over this. `scripts/railway/up.sh` auto-sets it to the created Railway domain (and writes it back into your env file); only set it by hand for custom domains or tunnels. Left at the localhost default in prod, scheduled jobs silently never fire. |
-| `ENABLE_DAILY_DIGEST` | no | `false` | Arms the reference daily-digest cron (`app/schedules.py`). Off by default. The digest workflow is always runnable on demand regardless. |
+| `ENABLE_DAILY_DIGEST` | no | `False` | Arms the reference daily-digest cron (`app/schedules.py`). Off by default. The digest workflow is always runnable on demand regardless. |
 | `DAILY_DIGEST_CRON` | no | `0 13 * * *` | Cron for the daily digest (UTC). Only used when `ENABLE_DAILY_DIGEST` is on. |
 | `DIGEST_TOPIC` | no | `the most important developments in AI agents` | Subject the daily digest summarizes. |
 | `PARALLEL_API_KEY` | no | — | Authenticates the WebSearch Agent's Parallel SDK / MCP connection (raises rate ceiling). |
@@ -196,7 +196,7 @@ Invoke a skill by name (`/extend-agent`) or just describe the task — Claude Co
 
 `scheduler=True` is on in [`app/main.py`](app/main.py). A schedule is a cron expression + an HTTP endpoint (a workflow or agent run); the poller fires due jobs in the background. Registration lives in [`app/schedules.py`](app/schedules.py)'s `register_schedules()`, called from the lifespan — idempotent (`if_exists="update"`, safe on every boot) and fail-soft (a bad schedule logs a warning rather than crashing startup).
 
-**Reference example.** [`workflows/digest.py`](workflows/digest.py) is a one-step workflow that runs the WebSearch agent on a topic; [`app/schedules.py`](app/schedules.py) registers a daily cron that hits its endpoint (`POST /workflows/daily-digest/runs`). It ships **off** — a scheduled agent run costs tokens, so a template shouldn't fire one unprompted. Arm it with `ENABLE_DAILY_DIGEST=true` (tune with `DAILY_DIGEST_CRON`, `DIGEST_TOPIC`). The workflow is always runnable on demand at that endpoint regardless of the flag.
+**Reference example.** [`workflows/digest.py`](workflows/digest.py) is a one-step workflow that runs the WebSearch agent on a topic; [`app/schedules.py`](app/schedules.py) registers a daily cron that hits its endpoint (`POST /workflows/daily-digest/runs`). It ships **off** — a scheduled agent run costs tokens, so a template shouldn't fire one unprompted. Arm it with `ENABLE_DAILY_DIGEST=True` (tune with `DAILY_DIGEST_CRON`, `DIGEST_TOPIC`). The workflow is always runnable on demand at that endpoint regardless of the flag.
 
 To add your own: define a `Workflow` in `workflows/`, import it into [`app/main.py`](app/main.py) and add it to `AgentOS(workflows=[...])`, and register a schedule for it in `register_schedules()`. Other common uses: **maintenance** (purge old sessions, vacuum tables), **periodic re-evaluation** (run `python -m evals` weekly to catch regressions).
 
