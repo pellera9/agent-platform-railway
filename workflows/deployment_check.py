@@ -107,7 +107,9 @@ def _check_reference_components() -> CheckResult:
 def _check_schedule_flag() -> CheckResult:
     if getenv("ENABLE_DEPLOY_CHECK", "True") == "True":
         return _pass("Schedule", "Deployment-check cron is armed (daily, 13:00 UTC).")
-    return _pass("Schedule", "Deployment-check cron is disabled (ENABLE_DEPLOY_CHECK=False); run endpoint remains available.")
+    return _pass(
+        "Schedule", "Deployment-check cron is disabled (ENABLE_DEPLOY_CHECK=False); run endpoint remains available."
+    )
 
 
 def _format_report(checks: list[CheckResult]) -> str:
