@@ -42,13 +42,13 @@ Connect a UI: open [os.agno.com](https://os.agno.com?utm_source=github&utm_mediu
 
 ### Step 2: Create your first agent
 
-Open [Claude Code](https://claude.ai/code) in this repo and paste:
+Open [Claude Code](https://claude.ai/code) in this repo and run the skill:
 
 ```
-Run docs/create-new-agent.md in a new branch
+/create-new-agent
 ```
 
-Claude asks a few questions, generates the agent file in `agents/`, registers it in `app/main.py`, adds prompts to `app/config.yaml`, restarts the container, and smoke-tests via cURL. Usually 5-10 minutes for a simple agent.
+(Or just say "create a new agent in a new branch" — Claude Code matches the skill automatically.) Claude asks a few questions, generates the agent file in `agents/`, registers it in `app/main.py`, adds prompts to `app/config.yaml`, restarts the container, and smoke-tests via cURL. Usually 5-10 minutes for a simple agent.
 
 Two reference agents are available in the template for you to study and copy from:
 
@@ -65,11 +65,11 @@ Chat with your agents at [os.agno.com](https://os.agno.com?utm_source=github&utm
 
 To improve your agents, use one of these recursive loops:
 
-1. [`docs/improve-agent.md`](docs/improve-agent.md). Hardens and fine-tunes your agent based on its existing spec. Claude derives probes from the agent's `INSTRUCTIONS`, runs them against the live container, judges responses, and edits until it passes.
+1. **`/improve-agent`**. Hardens and fine-tunes your agent based on its existing spec. Claude derives probes from the agent's `INSTRUCTIONS`, runs them against the live container, judges responses, and edits until it passes.
 
-2. [`docs/extend-agent.md`](docs/extend-agent.md). Add a new feature to an agent. You direct, Claude executes. Add tools, refine prompts, fix bugs. The Agno docs MCP is loaded so toolkit research is grounded in the real API.
+2. **`/extend-agent`**. Add a new feature to an agent. You direct, Claude executes. Add tools, refine prompts, fix bugs. The Agno docs MCP is loaded so toolkit research is grounded in the real API.
 
-Both run in Claude Code against `http://localhost:8000` with hot-reload.
+Both run in Claude Code against `http://localhost:8000` with hot-reload. These are [coding-agent skills](AGENTS.md#working-with-coding-agents) — invoke by name or describe the task.
 
 ### Step 5: Lock in behavior with evals
 
@@ -85,14 +85,14 @@ python -m evals --case <name>  # run one case
 
 Results log to Postgres via `db=eval_db`. Connect your AgentOS at [os.agno.com](https://os.agno.com?utm_source=github&utm_medium=example-repo&utm_campaign=agent-platform&utm_content=agent-platform&utm_term=railway) to explore eval history over time.
 
-Run [`docs/eval-and-improve.md`](docs/eval-and-improve.md) in Claude Code to run the suite, diagnose failures, and fix in scope.
+Run the `/eval-and-improve` skill in Claude Code to run the suite, diagnose failures, and fix in scope.
 
 ### Step 6: Sweep for drift
 
 Because the repo is managed primarily by coding agents, it moves fast. Run:
 
 ```
-Run docs/review-and-improve.md
+/review-and-improve
 ```
 
 Claude sweeps the whole repo for drift between docs, code, and config. Every agent file on disk should be registered in `app/main.py`. Every env var the code reads should be in `example.env` and the AGENTS.md table. Every path in a markdown doc should still exist. Every script mentioned in docs should do what's claimed.
@@ -152,10 +152,10 @@ MIIBIjANBgkq...
 
 ### 5. Sync env and verify
 
-While `.env.production` is open, point the in-cluster scheduler at your public Railway domain so cron triggers can reach AgentOS:
+`scripts/railway/up.sh` already set `AGENTOS_URL` to your Railway domain (on the service and in `.env.production`) so the in-cluster scheduler's cron triggers reach AgentOS — no action needed unless you're fronting it with a custom domain or tunnel, in which case set it by hand:
 
 ```sh
-# .env.production
+# .env.production — only for a custom domain / tunnel; up.sh fills this in otherwise
 AGENTOS_URL=https://<your-app>.up.railway.app
 ```
 
@@ -210,7 +210,9 @@ Rule of thumb: agents for open questions, teams for routing, workflows for proce
 
 ### Scheduled tasks
 
-`scheduler=True` is on in [`app/main.py`](app/main.py). Schedule any agent or workflow on a cron:
+`scheduler=True` is on in [`app/main.py`](app/main.py); [`app/schedules.py`](app/schedules.py) registers schedules from the lifespan (idempotent, fail-soft). The template ships a reference: [`workflows/digest.py`](workflows/digest.py) is a one-step workflow that runs WebSearch on a topic, and `app/schedules.py` wires it to a daily cron. It's **off by default** — set `ENABLE_DAILY_DIGEST=true` to arm it (the workflow is runnable on demand at `POST /workflows/daily-digest/runs` either way).
+
+To build your own, add a `Workflow` to `WORKFLOWS` in [`workflows/__init__.py`](workflows/__init__.py) and register a cron for it. Common uses:
 
 - **Maintenance.** Purge sessions older than 90 days. Vacuum tables.
 - **Proactive runs.** Every weekday morning, summarize overnight news for your portfolio and send to Slack.
@@ -273,7 +275,10 @@ See [Agno tools](https://docs.agno.com/tools/toolkits?utm_source=github&utm_medi
 | `OPENAI_API_KEY` | yes | none | OpenAI key for models and embeddings. |
 | `RUNTIME_ENV` | no | `prd` | `dev` enables hot-reload and disables JWT. Compose sets this to `dev` for local. |
 | `JWT_VERIFICATION_KEY` | prd | none | Public key from os.agno.com. Required when `RUNTIME_ENV=prd`. |
-| `AGENTOS_URL` | no | `http://127.0.0.1:8000` | Scheduler base URL. Set to your Railway domain in production. |
+| `AGENTOS_URL` | no | `http://127.0.0.1:8000` | Scheduler base URL. `scripts/railway/up.sh` auto-sets it to your Railway domain; set by hand only for a custom domain or tunnel. |
+| `ENABLE_DAILY_DIGEST` | no | `false` | Arms the reference daily-digest cron (`app/schedules.py`). The workflow is runnable on demand regardless. |
+| `DAILY_DIGEST_CRON` | no | `0 13 * * *` | Cron for the daily digest (UTC), when enabled. |
+| `DIGEST_TOPIC` | no | `the most important developments in AI agents` | Subject the daily digest summarizes. |
 | `PARALLEL_API_KEY` | no | none | Authenticates the WebSearch Agent's Parallel SDK / MCP connection. |
 | `SLACK_BOT_TOKEN` / `SLACK_SIGNING_SECRET` | no | none | Both must be set to enable the Slack interface. |
 | `DB_HOST` / `DB_PORT` / `DB_USER` / `DB_PASS` / `DB_DATABASE` | no | matches compose | Postgres connection. |

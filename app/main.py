@@ -12,7 +12,9 @@ from agno.utils.log import log_info
 
 from agents.code_search import code_search
 from agents.web_search import web_search
+from app.schedules import register_schedules
 from db import get_postgres_db
+from workflows import WORKFLOWS
 
 # ---------------------------------------------------------------------------
 # Environment
@@ -51,6 +53,9 @@ if SLACK_BOT_TOKEN and SLACK_SIGNING_SECRET:
 @asynccontextmanager
 async def lifespan(app):  # type: ignore[no-untyped-def]
     log_info("AgentOS lifespan: startup")
+    # Register background schedules on boot. Idempotent and fail-soft — a bad
+    # schedule logs a warning rather than taking the app down. See app/schedules.py.
+    register_schedules()
     try:
         yield
     finally:
@@ -69,6 +74,7 @@ agent_os = AgentOS(
     lifespan=lifespan,
     db=get_postgres_db(),
     agents=[web_search, code_search],
+    workflows=WORKFLOWS,
     interfaces=interfaces,
     config=str(Path(__file__).parent / "config.yaml"),
 )

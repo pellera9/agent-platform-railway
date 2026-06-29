@@ -1,11 +1,15 @@
+---
+name: extend-agent
+description: User-driven loop to change an existing agent in this repo — add a tool/MCP server/toolkit, add a capability (knowledge base, memory, sub-agent, scheduled task), refine its instructions, or fix a specific known bug, verifying each change against the live container. Use whenever the user names a concrete change to an agent. For autonomous hardening with no specific change in mind, use improve-agent.
+---
+
 # Extend an Agent
 
-> Claude Code prompt. Open Claude Code in this repo and paste:
-> `Run docs/extend-agent.md`
+> _**Coding-agent workflow** — a `/slash-command` your coding agent (Claude Code, Codex, others) runs while developing this repo. Invoke it by name (e.g. `/extend-agent`) or describe the task and it triggers automatically._
 
 You are recursively extending a target agent **with the user in the driver's seat**. Each iteration: the user names a change, you implement it with an Agno-aware eye (using the `agno-docs` MCP for any toolkit / API research), the change is verified against the live agent, then you ask if there's more to do. Stop when the user says they're done.
 
-This is the user-driven half of the iteration loop. The autonomous half lives in [`docs/improve-agent.md`](improve-agent.md) — Claude derives probes from the agent's `INSTRUCTIONS` and hardens behavior with no user input. Use this prompt to *change* the agent (add tools, add capabilities, refine the prompt, fix a known bug). Run `improve-agent.md` afterward to confirm nothing else regressed.
+This is the user-driven half of the iteration loop. The autonomous half lives in [`improve-agent`](../improve-agent/SKILL.md) — Claude derives probes from the agent's `INSTRUCTIONS` and hardens behavior with no user input. Use this prompt to *change* the agent (add tools, add capabilities, refine the prompt, fix a known bug). Run the `improve-agent` skill afterward to confirm nothing else regressed.
 
 The platform is on `http://localhost:8000` with hot-reload enabled (`RUNTIME_ENV=dev`), so edits to `agents/<slug>.py` are picked up by uvicorn within ~1s. Edits to `app/main.py` (e.g. registering a new sub-agent) require a container restart — Step 5 covers this.
 
@@ -28,7 +32,7 @@ Open `agents/<slug>.py`. Capture:
 
 - **Stated purpose** — the file's docstring + the `INSTRUCTIONS` string.
 - **Tools** — what's wired and what each one does.
-- **Pattern** — direct tools (like [`agents/web_search.py`](../agents/web_search.py)) or context provider (like [`agents/code_search.py`](../agents/code_search.py)).
+- **Pattern** — direct tools (like [`agents/web_search.py`](../../../agents/web_search.py)) or context provider (like [`agents/code_search.py`](../../../agents/code_search.py)).
 - **Existing levers** — `enable_agentic_memory`, `num_history_runs`, `knowledge=`, model id.
 
 Restate the agent's purpose to the user in 1-2 sentences before asking what to change. This catches "I thought it did X but actually it does Y" upfront.
@@ -47,7 +51,7 @@ If the user picked "Fix a bug" or "Something else," ask a follow-up free-form qu
 
 ## 3. Ground the change in agno docs
 
-For any change touching agno surface area — toolkit imports, knowledge config, memory flags, scheduler, sub-agent patterns — search the **`agno-docs` MCP** (configured in [`.mcp.json`](../.mcp.json)) before writing code. Fall back to fetching <https://docs.agno.com/llms.txt> only if the MCP is unavailable.
+For any change touching agno surface area — toolkit imports, knowledge config, memory flags, scheduler, sub-agent patterns — search the **`agno-docs` MCP** (configured in [`.mcp.json`](../../../.mcp.json)) before writing code. Fall back to fetching <https://docs.agno.com/llms.txt> only if the MCP is unavailable.
 
 What to capture per branch:
 
@@ -55,8 +59,8 @@ What to capture per branch:
 - **Add a capability**:
   - *Knowledge base* — `from db import create_knowledge`, instantiate with a name + table, pass via `knowledge=` on the Agent. Document load step (`.add_content_async()`) goes wherever ingestion lives.
   - *Memory* — flags on the Agent constructor: `enable_agentic_memory`, `enable_user_memories`, `add_history_to_context`, `num_history_runs`. Read agno's memory docs to pick the right one.
-  - *Sub-agent / context provider* — mirror [`agents/code_search.py`](../agents/code_search.py). The parent sees one `query_<thing>(question)` tool; the sub-agent does the work.
-  - *Scheduled task* — see [agno scheduler docs](https://docs.agno.com/agent-os/scheduler) and the `scheduler=True` line in [`app/main.py`](../app/main.py).
+  - *Sub-agent / context provider* — mirror [`agents/code_search.py`](../../../agents/code_search.py). The parent sees one `query_<thing>(question)` tool; the sub-agent does the work.
+  - *Scheduled task* — see [agno scheduler docs](https://docs.agno.com/agent-os/scheduler) and the `scheduler=True` line in [`app/main.py`](../../../app/main.py).
 - **Refine instructions** — no docs needed. Read the current `INSTRUCTIONS`, propose a minimal diff. Prefer narrowing ("on recent-events questions, follow up with a `web_fetch`") over forbidding.
 - **Fix a bug** — first reproduce the failure on the live agent (see Step 6). Then identify the layer: `INSTRUCTIONS` (most common), tool (wrong tool wired or missing), model (under-capable), env (rate limit, missing key, MCP unreachable).
 
@@ -68,10 +72,10 @@ Before editing, tell the user in 2-3 lines what you're about to change and why. 
 
 Then edit. Files in scope:
 
-- [`agents/<slug>.py`](../agents/) — instructions, tools, model, memory flags, knowledge.
-- [`app/main.py`](../app/main.py) — only if registering a new sub-agent or changing interface wiring.
-- [`app/config.yaml`](../app/config.yaml) — add or update the agent's `quick_prompts` to exercise the new capability.
-- [`pyproject.toml`](../pyproject.toml) — only if a toolkit needs new pip deps.
+- [`agents/<slug>.py`](../../../agents/) — instructions, tools, model, memory flags, knowledge.
+- [`app/main.py`](../../../app/main.py) — only if registering a new sub-agent or changing interface wiring.
+- [`app/config.yaml`](../../../app/config.yaml) — add or update the agent's `quick_prompts` to exercise the new capability.
+- [`pyproject.toml`](../../../pyproject.toml) — only if a toolkit needs new pip deps.
 
 Keep edits surgical. One change per iteration of this loop — if the user asked for three things, do them one at a time so each can be smoke-tested independently.
 
@@ -150,7 +154,7 @@ Summarize for the user:
 - One line per accepted change (which lever, what changed).
 - `git diff --stat` plus a short `git diff` block for the agent file.
 - Suggested commit message — `feat(<slug>): <one-line>` for new tools/capabilities, `fix(<slug>): <one-line>` for bug fixes, `chore(<slug>): refine instructions` for prompt-only edits. Combine if multiple types in one session.
-- **Recommended next step** — run [`docs/improve-agent.md`](improve-agent.md) to autonomously verify the agent still does what its `INSTRUCTIONS` say it does. The change you just made widened the agent's surface area; the autonomous loop catches anything that regressed.
+- **Recommended next step** — run [`improve-agent`](../improve-agent/SKILL.md) to autonomously verify the agent still does what its `INSTRUCTIONS` say it does. The change you just made widened the agent's surface area; the autonomous loop catches anything that regressed.
 
 A simple change (one tool, one prompt refinement) takes 5-10 minutes. A capability addition (knowledge base, sub-agent) usually 15-30. The loop scales linearly with how many changes the user wants to stack into one session — keep them small and verifiable.
 
@@ -166,7 +170,7 @@ Target: `web-search`. The user wants the agent to also be able to read PDFs from
 
 **Step 4** — propose: *"Add `FirecrawlTools` so `web-search` can fetch and parse PDFs. Needs `FIRECRAWL_API_KEY` in `.env` and `firecrawl-py` in `pyproject.toml`. Add a quick prompt that exercises a PDF URL."* User says yes.
 
-Edit `agents/web_search.py` to import `FirecrawlTools` and add it to `tools=[web_tools, FirecrawlTools()]`. Add `FIRECRAWL_API_KEY=` to [`example.env`](../example.env). Add `firecrawl-py` to `pyproject.toml`. Add a quick prompt to `app/config.yaml`:
+Edit `agents/web_search.py` to import `FirecrawlTools` and add it to `tools=[web_tools, FirecrawlTools()]`. Add `FIRECRAWL_API_KEY=` to [`example.env`](../../../example.env). Add `firecrawl-py` to `pyproject.toml`. Add a quick prompt to `app/config.yaml`:
 
 ```yaml
 web-search:
@@ -179,6 +183,6 @@ web-search:
 
 **Step 7** — user says "no, that's it."
 
-**Step 8** — diff summary, commit `feat(web-search): add FirecrawlTools for PDF fetching`, recommend `improve-agent.md` to harden the broader behavior.
+**Step 8** — diff summary, commit `feat(web-search): add FirecrawlTools for PDF fetching`, recommend the `improve-agent` skill to harden the broader behavior.
 
 That's the loop. Most sessions are smaller — one tool, one rule, one bug.

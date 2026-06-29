@@ -35,6 +35,26 @@ cat << 'BANNER'
 BANNER
 echo -e "${NC}"
 
+# Persist a resolved value back into the env file so it stays a faithful record
+# of the deploy (and env-sync.sh keeps managing it). Replaces an existing
+# commented-or-uncommented `KEY=` line in place; appends if the key is absent.
+# Rewrites via the original file (not `mv`) so the file keeps its inode +
+# permissions. The `|` sed delimiter avoids clashing with URL slashes. No-op
+# when the file is missing.
+persist_env_var() {
+    local key="$1" value="$2" file="$3" tmp
+    [[ -z "$file" || ! -f "$file" ]] && return
+    if grep -qE "^[#[:space:]]*${key}=" "$file"; then
+        tmp="$(mktemp)"
+        if sed -E "s|^[#[:space:]]*${key}=.*|${key}=${value}|" "$file" > "$tmp"; then
+            cat "$tmp" > "$file"
+        fi
+        rm -f "$tmp"
+    else
+        printf '\n%s=%s\n' "$key" "$value" >> "$file"
+    fi
+}
+
 # Load env file — .env.production preferred for Railway, .env as fallback.
 # Parsed line-by-line (not `source`d) so an unquoted multi-line PEM
 # JWT_VERIFICATION_KEY isn't interpreted as shell. Mirrors the parser in
@@ -128,8 +148,35 @@ RAILWAY_VARS=(
     -v "OPENAI_API_KEY=${OPENAI_API_KEY}"
 )
 [[ -n "$PARALLEL_API_KEY" ]] && RAILWAY_VARS+=(-v "PARALLEL_API_KEY=${PARALLEL_API_KEY}")
+# Forward AGENTOS_URL only if the env file already pinned one; otherwise it's
+# derived from the fresh domain below.
+[[ -n "$AGENTOS_URL" ]] && RAILWAY_VARS+=(-v "AGENTOS_URL=${AGENTOS_URL}")
 
 railway add -s agent-os "${RAILWAY_VARS[@]}"
+
+# Domain before deploy — capture it so AGENTOS_URL is set on the service
+# *before* it serves, and so os.agno.com can mint JWT_VERIFICATION_KEY against
+# the real domain.
+echo ""
+echo -e "${BOLD}Creating domain...${NC}"
+echo ""
+DOMAIN_OUTPUT="$(railway domain --service agent-os 2>&1 || true)"
+echo "$DOMAIN_OUTPUT"
+APP_URL="$(grep -oE 'https://[A-Za-z0-9.-]+|[A-Za-z0-9-]+\.up\.railway\.app' <<< "$DOMAIN_OUTPUT" | head -1)"
+[[ -n "$APP_URL" && "$APP_URL" != https://* ]] && APP_URL="https://${APP_URL}"
+
+# The scheduler reaches AgentOS over its public URL. Without AGENTOS_URL it
+# defaults to http://127.0.0.1:8000, so scheduled jobs silently never fire in
+# prod. Default it to the fresh domain (unless the env file pinned one), and
+# write it back into the env file so .env.production stays a faithful record
+# and env-sync.sh keeps managing it.
+AGENTOS_URL_PERSISTED=""
+if [[ -z "$AGENTOS_URL" && -n "$APP_URL" ]]; then
+    railway variables --set "AGENTOS_URL=${APP_URL}" --service agent-os > /dev/null
+    persist_env_var AGENTOS_URL "$APP_URL" "$ENV_FILE"
+    [[ -n "$ENV_FILE" ]] && AGENTOS_URL_PERSISTED=1
+    echo -e "${DIM}Set AGENTOS_URL=${APP_URL} (Railway${AGENTOS_URL_PERSISTED:+ + ${ENV_FILE}})${NC}"
+fi
 
 echo ""
 echo -e "${BOLD}Deploying application...${NC}"
@@ -137,12 +184,8 @@ echo ""
 railway up --service agent-os -d
 
 echo ""
-echo -e "${BOLD}Creating domain...${NC}"
-echo ""
-railway domain --service agent-os
-
-echo ""
 echo -e "${BOLD}Done.${NC} Domain may take ~5 minutes."
+[[ -n "$APP_URL" ]] && echo -e "${DIM}URL:            ${APP_URL}${NC}"
 echo -e "${DIM}Logs:           railway logs --service agent-os${NC}"
 echo -e "${DIM}Sync env vars:  ./scripts/railway/env-sync.sh  (defaults to .env.production)${NC}"
 echo ""
